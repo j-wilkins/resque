@@ -146,6 +146,20 @@ describe "Resque" do
     assert_equal '/tmp', job.args[1]
   end
 
+  it 'can enqueue a job into a different namespace' do
+    assert_equal 0, Resque.size(:method)
+    assert_equal 0, Resque.in_namespace(:other) {Resque.size(:method)}
+    assert Resque.enqueue_in(:other, SomeMethodJob, 20, '/tmp')
+
+    assert_equal 0, Resque.size(:method)
+    assert_equal 1, Resque.in_namespace(:other) {Resque.size(:method)}
+
+    job = Resque.in_namespace(:other) {Resque.reserve(:method)}
+    assert_equal SomeMethodJob, job.payload_class
+    assert_equal 20, job.args[0]
+    assert_equal '/tmp', job.args[1]
+  end
+
   it "needs to infer a queue with enqueue" do
     assert_raises Resque::NoQueueError do
       Resque.enqueue(SomeJob, 20, '/tmp')

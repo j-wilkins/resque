@@ -71,6 +71,12 @@ module Resque
     self.redis
   end
 
+  def in_namespace(namespace)
+    redis.namespace(namespace) do
+      yield
+    end
+  end
+
   def redis_id
     # support 1.x versions of redis-rb
     if redis.respond_to?(:server)
@@ -333,6 +339,18 @@ module Resque
     return true
   end
 
+  # Just like `enqueue` but allows you to specify the namespace you want
+  # to use. Runs hooks.
+  #
+  # `namespace` should be the name of the namespace you would like.
+  #
+  # Returns whatever `enqueue` returns
+  def enqueue_in(namespace, klass, *args)
+    in_namespace(namespace) do
+      enqueue(klass, *args)
+    end
+  end
+
   # This method can be used to conveniently remove a job from a queue.
   # It assumes the class you're passing it is a real Ruby class (not
   # a string or reference) which either:
@@ -372,7 +390,7 @@ module Resque
     Plugin.after_dequeue_hooks(klass).each do |hook|
       klass.send(hook, *args)
     end
-    
+
     destroyed
   end
 
