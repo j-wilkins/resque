@@ -22,7 +22,9 @@ namespace :resque do
           abort "env var BACKGROUND is set, which requires ruby >= 1.9"
       end
       Process.daemon(true)
+      write_pidfile(worker.pid) if ENV['PIDFILE']
     end
+
 
     Resque.logger.info "Starting worker #{worker}"
 
@@ -44,9 +46,11 @@ namespace :resque do
 
   desc 'Write a pidfile.'
   task :pidfile do
-    if ENV['PIDFILE']
-      File.open(ENV['PIDFILE'], 'w') { |f| f << Process.pid }
-    end
+    write_pidfile(Process.pid) if ENV['PIDFILE']
+  end
+
+  def write_pidfile(pid)
+    File.open(ENV['PIDFILE'], 'w') { |f| f << pid }
   end
 
 end
